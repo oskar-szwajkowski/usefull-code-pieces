@@ -1,0 +1,30 @@
+# Custom resource for CORS handler
+resources:
+  Resources:
+    CORS:
+      Type: AWS::ApiGateway::Method
+      DependsOn: ApiGatewayResourceProxyVar
+      Properties:
+        AuthorizationType: "NONE"
+        HttpMethod: "OPTIONS"
+        ResourceId:
+          Ref: ApiGatewayResourceProxyVar
+        RestApiId:
+          Ref: ApiGatewayRestApi
+        Integration:
+          Type: AWS_PROXY
+          IntegrationHttpMethod: "POST"
+          PassthroughBehavior: "WHEN_NO_MATCH"
+          ContentHandling: "CONVERT_TO_TEXT"
+          Credentials:
+            Fn::Join: ["", ["arn:aws:iam::", !Ref AWS::AccountId, ":role/apigAwsProxyRole-${self:provider.stage}-${self:provider.region}"]]
+          IntegrationResponses:
+            - ResponseTemplates:
+                "application/json": ""
+              StatusCode: "200"
+          Uri:
+            Fn::Join: ["", ["arn:aws:apigateway:${self:provider.region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${self:provider.region}:", !Ref AWS::AccountId, ":function:cors-handler-${self:provider.stage}-${self:provider.region}/invocations"]]
+        MethodResponses:
+          - ResponseModels:
+              "application/json": "Empty"
+            StatusCode: "200"
